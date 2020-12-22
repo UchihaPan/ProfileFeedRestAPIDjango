@@ -1,15 +1,15 @@
 from django.shortcuts import render
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserProfileSerializer
+from .serializers import UserProfileSerializer,UserFeedserializer
 from rest_framework import status, viewsets
-from .models import UserProfile
+from .models import UserProfile,ProfileFeedItem
 from rest_framework.authentication import TokenAuthentication
-from .permissions import UserOwnObjectPermission
+from .permissions import UserOwnObjectPermission,UserOwnStatusPermission
 from rest_framework.filters import SearchFilter
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 
 
@@ -44,3 +44,18 @@ class UserProfileView(viewsets.ModelViewSet):
     ]
     filter_backends = (SearchFilter,)
     search_fields=('name','email',)
+
+
+class ProfileFeedView(viewsets.ModelViewSet):
+    serializer_class = UserFeedserializer
+    queryset = ProfileFeedItem.objects.all()
+    authentication_classes = [
+        TokenAuthentication,
+    ]
+    permission_classes = [
+        UserOwnStatusPermission,
+        IsAuthenticatedOrReadOnly,
+    ]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
